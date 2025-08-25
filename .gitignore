@@ -1,0 +1,31 @@
+# Sensitive directories
+secure/
+logs/
+
+# Credential files
+*.enc
+*.key
+credential_*
+
+# Cache files
+*cache*
+vm_cache*
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# PowerShell temporary files
+*.ps1.tmp
+
+# Log files
+*.log
+
+# Backup files
+*.backup
+*.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
