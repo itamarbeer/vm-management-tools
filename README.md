@@ -18,131 +18,142 @@ cd vm-management-tools
 
 ## How to Use
 
-### 1. Initial Configuration
+### 1. Initial Setup
 
-After installation, configure your vCenter credentials:
+After installation, add the commands to your shell:
 ```bash
-~/vm-credentials
+# Add to your ~/.bashrc
+alias vmmanage='~/vm-management-tools/scripts/vm-search-manager-v3.sh'
+alias vmcred='pwsh -File ~/vm-management-tools/scripts/securefile-v2.ps1'
+
+# Reload your shell
+source ~/.bashrc
 ```
 
-This will prompt you to:
-- Add vCenter server addresses
-- Enter username and password for each vCenter
-- Credentials are encrypted and stored securely
+### 2. Configure vCenter Credentials
 
-### 2. Build VM Cache
-
-Build a searchable cache of all VMs across your vCenters:
+Set up your vCenter server credentials (required first step):
 ```bash
-cd ~/vm-management-tools
-pwsh -File scripts/build-vm-cache-v2.ps1
+vmcred
 ```
 
-This process:
-- Connects to all configured vCenters
-- Retrieves VM information (name, IP, host, status)
-- Creates a local cache for fast searching
-- Should be run periodically to keep data current
+This will:
+- Prompt for vCenter server addresses
+- Securely encrypt and store your credentials
+- Create the credential files needed for VM operations
 
 ### 3. VM Search and Management
 
 Launch the interactive VM manager:
 ```bash
-~/vm-manager
+vmmanage
 ```
 
-**Available Options:**
-- **Search by VM Name** - Find VMs by partial or full name
-- **Search by IP Address** - Locate VMs by IP address
-- **List All VMs** - Display all cached VMs
-- **VM Details** - Show detailed information for specific VMs
-- **Refresh Cache** - Update VM information from vCenters
+**Features Available:**
+- **Search VMs** - Find VMs by name across all vCenters
+- **VM Details** - View comprehensive VM information
+- **Snapshot Management** - Create and delete VM snapshots
+- **Power Operations** - Start, stop, restart VMs (hard and graceful)
+- **Real-time Operations** - Persistent PowerShell sessions for instant responses
 
-**Example Search Session:**
+**Example Session:**
 ```
-VM Management Tools v3.0
-========================
+Enhanced VM Search and Management Tool v3.0
+===========================================
 
-1. Search by VM Name
-2. Search by IP Address  
-3. List All VMs
-4. Refresh Cache
-5. Exit
+Enter VM search pattern (or 'q' to quit): web-server
 
-Select option: 1
-Enter VM name (partial match): web-server
+Found VMs matching your search:
 
-Found 3 matching VMs:
-- web-server-01 (192.168.1.10) on vcenter1.company.com
-- web-server-02 (192.168.1.11) on vcenter1.company.com  
-- web-server-prod (10.0.1.50) on vcenter2.company.com
+#   | VM Name              | Power State  | Host                 | vCenter
+----+----------------------+--------------+----------------------+----------------
+1   | web-server-01        | PoweredOn    | esxi-host-01        | vcenter1.local
+2   | web-server-02        | PoweredOff   | esxi-host-02        | vcenter1.local
 
-Select VM for details: 1
-```
+Select a VM to manage: 1
 
-### 4. Managing Multiple vCenters
+VM Management: web-server-01 (Session Active)
+==============================================
 
-The tools support multiple vCenter servers:
-
-1. **Add Multiple vCenters:**
-   ```bash
-   ~/vm-credentials
-   # Add each vCenter server separately
-   ```
-
-2. **Search Across All vCenters:**
-   - VM searches automatically query all configured vCenters
-   - Results show which vCenter each VM belongs to
-   - Cache includes VMs from all vCenters
-
-### 5. Updating and Maintenance
-
-**Update PowerCLI:**
-```bash
-~/install-powercli
+Available Actions:
+1. Restart VM (Hard)
+2. Create Snapshot
+3. List Snapshots
+4. Delete Snapshot
+5. Power Off VM (Hard)
+6. Power On VM
+7. VM Details
+8. Graceful Shutdown (Guest)
+9. Graceful Restart (Guest)
 ```
 
-**Refresh VM Cache (recommended weekly):**
+### 4. Build VM Cache (Automatic)
+
+The VM cache is built automatically when needed, but you can also:
+
+**Manual cache build:**
 ```bash
 cd ~/vm-management-tools
-pwsh -File scripts/build-vm-cache-v2.ps1
+./scripts/build-vm-cache.sh
 ```
 
-**Add New vCenter:**
+**Schedule automatic updates (optional):**
 ```bash
-~/vm-credentials
-# Select option to add new vCenter
+# Add to crontab for updates every 6 hours
+crontab -e
+# Add line: 0 */6 * * * ~/vm-management-tools/scripts/build-vm-cache.sh >/dev/null 2>&1
+```
+
+### 5. Quick Commands
+
+**Get help:**
+```bash
+vmmanage --help
+```
+
+**Validate project:**
+```bash
+cd ~/vm-management-tools
+./scripts/validate-project.sh
+```
+
+**Direct PowerShell commands:**
+```bash
+# Setup credentials
+pwsh -File ~/vm-management-tools/scripts/securefile-v2.ps1
+
+# Build VM cache  
+pwsh -File ~/vm-management-tools/scripts/build-vm-cache-v2.ps1
 ```
 
 ## Usage Examples
 
-### Find a VM by Name
+### Find and Manage a VM
 ```bash
-~/vm-manager
-# Select option 1
-# Enter: "database"
-# Results show all VMs with "database" in the name
-```
-
-### Find VM by IP Address
-```bash
-~/vm-manager
-# Select option 2  
-# Enter: "192.168.1.100"
-# Shows VM with that IP address
-```
-
-### Get VM Details
-```bash
-~/vm-manager
-# Search for VM first
+vmmanage
+# Enter search pattern: "database"
 # Select VM from results
-# View detailed information including:
-#   - VM name and IP
-#   - ESXi host
-#   - Power state
-#   - vCenter server
-#   - Resource allocation
+# Choose action: Create snapshot, restart, etc.
+```
+
+### Setup New vCenter
+```bash
+vmcred
+# Follow prompts to add vCenter server and credentials
+```
+
+### Get Help
+```bash
+vmmanage --help
+# Shows all available features and commands
+```
+
+### Quick VM Details
+```bash
+vmmanage
+# Search for VM
+# Select VM
+# Choose option 7 for detailed information
 ```
 
 ## Project Structure
@@ -174,30 +185,40 @@ scripts/
 
 ## Troubleshooting
 
-### PowerCLI Issues in WSL
-If PowerCLI fails to install, use Windows PowerShell:
+### PowerCLI Issues
+If PowerCLI installation fails:
 ```bash
+# Try Windows PowerShell (if in WSL)
 powershell.exe -Command "Install-Module VMware.PowerCLI -Scope CurrentUser -Force"
+
+# Or use the installer script
+~/vm-management-tools/install-powercli
 ```
 
+### VM Search Returns No Results
+1. **Check credentials:** `vmcred`
+2. **Rebuild cache:** `cd ~/vm-management-tools && ./scripts/build-vm-cache.sh`
+3. **Validate project:** `cd ~/vm-management-tools && ./scripts/validate-project.sh`
+
+### Connection Problems
+- Verify vCenter server addresses in credentials
+- Test network connectivity: `ping your-vcenter-server`
+- Ensure credentials have VM management permissions
+- Check vCenter certificate trust
+
 ### Permission Errors
-Ensure secure directories have correct permissions:
 ```bash
+# Fix secure directory permissions
 chmod 700 ~/vm-management-tools/secure
 ```
 
-### VM Cache Issues
-If VM searches return no results:
-1. Verify vCenter credentials: `~/vm-credentials`
-2. Rebuild cache: `cd ~/vm-management-tools && pwsh -File scripts/build-vm-cache-v2.ps1`
-3. Check network connectivity to vCenter servers
-
-### Connection Problems
-If vCenter connections fail:
-- Verify vCenter server addresses are correct
-- Check network connectivity: `ping vcenter.company.com`
-- Ensure credentials have sufficient permissions
-- Check if vCenter certificates are trusted
+### Command Not Found
+```bash
+# Add aliases to bashrc
+echo 'alias vmmanage="~/vm-management-tools/scripts/vm-search-manager-v3.sh"' >> ~/.bashrc
+echo 'alias vmcred="pwsh -File ~/vm-management-tools/scripts/securefile-v2.ps1"' >> ~/.bashrc
+source ~/.bashrc
+```
 
 ## License
 
